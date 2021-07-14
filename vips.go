@@ -194,6 +194,9 @@ func VipsIsTypeSupported(t ImageType) bool {
 	if t == AVIF {
 		return int(C.vips_type_find_bridge(C.HEIF)) != 0
 	}
+	if t == JXL {
+		return int(C.vips_type_find_bridge(C.JXL)) != 0
+	}
 	return false
 }
 
@@ -218,6 +221,9 @@ func VipsIsTypeSupportedSave(t ImageType) bool {
 	}
 	if t == AVIF {
 		return int(C.vips_type_find_save_bridge(C.HEIF)) != 0
+	}
+	if t == JXL {
+		return int(C.vips_type_find_save_bridge(C.JXL)) != 0
 	}
 	return false
 }
@@ -512,6 +518,8 @@ func vipsSave(image *C.VipsImage, o vipsSaveOptions) ([]byte, error) {
 		saveErr = C.vips_heifsave_bridge(tmpImage, &ptr, &length, strip, quality, lossless)
 	case AVIF:
 		saveErr = C.vips_avifsave_bridge(tmpImage, &ptr, &length, strip, quality, lossless, speed)
+	case JXL:
+		saveErr = C.vips_avifsave_bridge(tmpImage, &ptr, &length, strip, quality, interlace, lossless, speed)
 	default:
 		saveErr = C.vips_jpegsave_bridge(tmpImage, &ptr, &length, strip, quality, interlace)
 	}
@@ -749,6 +757,12 @@ func vipsImageType(buf []byte) ImageType {
 	if IsTypeSupported(HEIF) && buf[4] == 0x66 && buf[5] == 0x74 && buf[6] == 0x79 && buf[7] == 0x70 &&
 		buf[8] == 0x61 && buf[9] == 0x76 && buf[10] == 0x69 && buf[11] == 0x66 {
 		return AVIF
+	}
+	if IsTypeSupported(JXL) && ((buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x00 && buf[3] == 0x0C && 
+			 		buf[4] == 0x4A && buf[5] == 0x58 && buf[6] == 0x4C && buf[7] == 0x20 &&
+			 		buf[8] == 0x0D && buf[9] == 0x0A && buf[10] == 0x87 && buf[11] == 0x0A) || (
+					buf[0] == 0xFF && buf[1] == 0x0A)) {
+		return JXL
 	}
 
 	return UNKNOWN
